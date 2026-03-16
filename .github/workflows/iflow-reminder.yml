@@ -1,0 +1,39 @@
+name: 心流APIKey提醒
+
+on:
+  schedule:
+    # 北京时间 11:00 和 16:00 (UTC 03:00 和 08:00)
+    - cron: '0 3,8 * * *'
+  workflow_dispatch:
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 发送飞书提醒
+        run: |
+          # 飞书 Webhook 地址
+          WEBHOOK="https://open.feishu.cn/open-apis/bot/v2/hook/72f8caa6-69ea-4ad0-93af-d5695976223c"
+          
+          # 判断是否是每7天的第1天 (从1月1日开始计算)
+          DAY_OF_YEAR=$(date -u +%j)
+          if [ $((DAY_OF_YEAR % 7)) -eq 1 ]; then
+            MESSAGE="🔔 **心流APIKey提醒 (每7天)**
+
+⏰ 时间：$(date -u '+%Y-%m-%d %H:%M UTC')
+
+📝 请记得去重置心流APIKey！
+🔗 地址：https://platform.iflow.cn/profile?tab=apiKey
+
+💡 账号：17706008679"
+          else
+            MESSAGE="🔔 **心流APIKey提醒 (每日检查)**
+
+⏰ 时间：$(date -u '+%Y-%m-%d %H:%M UTC')
+
+📝 今日是第$((DAY_OF_YEAR % 7))天，下一次重置提醒将在第$((7 - DAY_OF_YEAR % 7))天后"
+          fi
+          
+          curl -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{\"msg_type\": \"text\", \"content\": {\"text\": \"$MESSAGE\"}}"
